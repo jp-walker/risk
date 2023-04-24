@@ -10,7 +10,7 @@ import risk.definitions
 
 import copy
 from collections import deque
-import HeapDict
+import heapdict
 
 Territory = namedtuple('Territory', ['territory_id', 'player_id', 'armies'])
 Move = namedtuple('Attack', ['from_territory_id', 'from_armies', 'to_territory_id', 'to_player_id', 'to_armies'])
@@ -212,7 +212,7 @@ class Board(object):
             for t in ts:
                 if t not in visited:
                     copy_t = copy.deepcopy(d[current])
-                    copy_t.append(ter)
+                    copy_t.append(t)
                     d[t] = copy_t
                     que.append(t)
                 visited.add(t)

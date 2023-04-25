@@ -1,6 +1,6 @@
 import os
 import random
-from collections import namedtuple
+from collections import namedtuple, deque
 
 import matplotlib.pyplot as plt
 import matplotlib.patches as patches
@@ -9,8 +9,6 @@ from matplotlib.path import Path
 import risk.definitions
 
 import copy
-from collections import deque
-import heapdict
 
 Territory = namedtuple('Territory', ['territory_id', 'player_id', 'armies'])
 Move = namedtuple('Attack', ['from_territory_id', 'from_armies', 'to_territory_id', 'to_player_id', 'to_armies'])
@@ -233,22 +231,23 @@ class Board(object):
         '''
         d = {}
         d[source] = [source]
-        pq = heapdict.heapdict()
-        pq[source] = 0
+        pq = deque([])
+        pq.append((0, source))
         visited = set([])
         visited.add(source)
 
         while len(pq) > 0:
-            current, priority = pq.popitem()
+            pq = deque(sorted(pq))
+            priority, current = pq.popleft()
             if current == target:
-                return d[current_ter]
+                return d[current]
             ts = [t for t in risk.definitions.territory_neighbors[current] if (self.owner(t) != self.owner(source) and t not in visited)]
             for t in ts:
                 copy_t = copy.deepcopy(d[current])
                 copy_t.append(t)
                 current_p = priority + self.armies(t)
                 d[t] = copy_t
-                pq[t] = current_p
+                pq.append((current_p, t))
 
 
     def can_attack(self, source, target):

@@ -113,7 +113,20 @@ class Board(object):
         Returns:
             bool: True if the input path is valid
         '''
-
+        st = set()
+        if len(path) <= 1:
+            return True
+        else:
+            for i in range(0, len(path) - 1):
+                one = path[i]
+                two = path[i+1]
+                st.add(one)
+                st.add(two)
+                if two not in risk.definitions.territory_neighbors[one]:
+                    return False
+            if len(st) != len(path):
+                return False
+            return True
     
     def is_valid_attack_path(self, path):
         '''
@@ -132,7 +145,14 @@ class Board(object):
         Returns:
             bool: True if the path is an attack path
         '''
-
+        if len(path) < 2 or not self.is_valid_path(path):
+            return False
+        else:
+            player = self.owner(path[0])
+            for i in path[1:]:
+                if self.owner(i) == player:
+                    return False
+            return True
 
     def cost_of_attack_path(self, path):
         '''
@@ -145,6 +165,10 @@ class Board(object):
         Returns:
             bool: the number of enemy armies in the path
         '''
+        cost = 0
+        for i in path[1:]:
+            cost += self.armies(i)
+        return cost
 
 
     def shortest_path(self, source, target):
@@ -231,23 +255,32 @@ class Board(object):
         '''
         d = {}
         d[source] = [source]
-        pq = deque([])
+        pq = []
         pq.append((0, source))
         visited = set([])
         visited.add(source)
-
+        if source == target:
+            return None
         while len(pq) > 0:
-            pq = deque(sorted(pq))
-            priority, current = pq.popleft()
+            pq.sort(reverse = True)
+            priority, current = pq.pop()
             if current == target:
                 return d[current]
             ts = [t for t in risk.definitions.territory_neighbors[current] if (self.owner(t) != self.owner(source) and t not in visited)]
             for t in ts:
-                copy_t = copy.deepcopy(d[current])
-                copy_t.append(t)
+                new = copy.deepcopy(d[current])
+                new.append(t)
                 current_p = priority + self.armies(t)
-                d[t] = copy_t
-                pq.append((current_p, t))
+                marker = 0
+                for i in range(len(pq)):
+                    if t in pq[i] and current_p < pq[i][0]:
+                        pq[i] = (current_p, t)
+                        marker = 1
+                if marker == 0:
+                    d[t] = new
+                    pq.append((current_p, t))
+                visited.add(t)
+                    
 
 
     def can_attack(self, source, target):
@@ -259,7 +292,34 @@ class Board(object):
         Returns:
             bool: True if a valid attack path exists between source and target; else False
         '''
-
+        d = {}
+        d[source] = [source]
+        pq = []
+        pq.append((0,source))
+        visited = set([])
+        visited.add(source)
+        if source == target:
+            return False
+        while len(pq) > 0:
+            pq.sort(reverse = True)
+            priority, current = pq.pop()
+            if current == target:
+                return True
+            ts = [t for t in risk.definitions.territory_neighbors[current] if (self.owner(t) != self.owner(source) and t not in visited)]
+            for t in ts:
+                new = copy.deepcopy(d[current])
+                new.append(t)
+                current_p = priority + self.armies(t)
+                marker = 0
+                for i in range(len(pq)):
+                    if t in pq[i] and current_p < pq[i][0]:
+                        pq[i] = (current_p, t)
+                        marker = 1
+                if marker == 0:
+                    d[t] = new
+                    pq.append((current_p, t))
+                visited.add(t)
+        return False
 
     # ======================= #
     # == Continent Methods == #
